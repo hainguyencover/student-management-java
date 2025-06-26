@@ -1,50 +1,52 @@
 package model;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-public class Student implements Serializable {
-    private int id;
-    private String name;
-    private int age;
+public class Student extends Person implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private static int nextId = 1;
+    private final int id;
+    private int birthYear;
     private String major;
 
-    public Student(int id, String name, int age, String major) {
+    public Student() {
+        this(nextId, "Chưa có tên", "Chưa có địa chỉ", "Chưa có số điện thoại",
+                "Chưa có email", "Khác", 2000, "Chưa xác định");
+    }
+
+    public Student(int id, String name, String address, String phone, String email,
+                   String gender, int birthYear, String major) {
+        super(name, address, phone, email, gender);
         this.id = id;
-        this.name = name;
-        this.age = age;
+        this.birthYear = birthYear;
         this.major = major;
+        if (id >= nextId) {
+            nextId = id + 1;
+        }
     }
 
-    public int getId() {
-        return id;
-    }
+    // Getters and Setters
+    public int getId() { return id; }
+    public int getBirthYear() { return birthYear; }
+    public void setBirthYear(int birthYear) { this.birthYear = birthYear; }
 
-    public String getName() {
-        return name;
-    }
+    public String getMajor() { return major; }
+    public void setMajor(String major) { this.major = major; }
+
+    public static int getNextId() { return nextId; }
+    public static void setNextId(int nextId) { Student.nextId = nextId; }
 
     public int getAge() {
-        return age;
-    }
-
-    public String getMajor() {
-        return major;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
-
-    public void setMajor(String major) {
-        this.major = major;
+        return LocalDateTime.now().getYear() - birthYear;
     }
 
     @Override
     public String toString() {
-        return String.format("| %-4d | %-20s | %-3d | %-10s |", id, name, age, major);
+        return String.format("Student{id=%d, name='%s', address='%s', phone='%s', email='%s', gender='%s', birthYear=%d, major='%s'}",
+                id, name, address, phone, email, gender, birthYear, major);
     }
 }

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class StudentController {
-    private StudentService studentService;
-    private StudentView studentView;
+    private final StudentService studentService;
+    private final StudentView studentView;
 
     public StudentController() {
         this.studentService = new StudentService();

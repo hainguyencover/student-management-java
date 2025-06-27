@@ -1,0 +1,22 @@
+<component name="libraryTable">
+  <library name="StudentManager">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$" />
+      <root url="jar://$PATH_TO_FX$/javafx-swt.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.base.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.controls.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.fxml.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.graphics.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.media.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.web.jar!/" />
+      <root url="jar://$PATH_TO_FX$/javafx.swing.jar!/" />
+      <root url="jar://$PATH_TO_FX$/jdk.jsobject.jar!/" />
+      <root url="jar://$PATH_TO_FX$/jfx.incubator.input.jar!/" />
+      <root url="jar://$PATH_TO_FX$/jfx.incubator.richtext.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$" />
+    </SOURCES>
+  </library>
+</component>

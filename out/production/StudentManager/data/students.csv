@@ -2,4 +2,3 @@ ID,Name,Address,Phone,Email,Gender,BirthYear,Major
 1,"Nguyen Duc Hai","Ninh Binh","0382921843","hai@gmail.com","Nam",2004,"Lap trinh Mobile"
 2,"Nguyen Huu Huy","Ha Noi","0382921844","huy@gmail.com","Nam",2000,"Python"
 3,"Nguyen Thi Linh","Bac Giang","0382921856","linh@gmail.com","Nữ",2001,"Java"
-4,"Tran Van Bang","Hai Phong","0382921889","bang@gmail.com","Nam",2001,"JavaScript"

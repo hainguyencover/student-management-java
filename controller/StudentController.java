@@ -5,6 +5,7 @@ import service.StudentService;
 import view.StudentView;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -12,6 +13,7 @@ import java.util.Objects;
 public class StudentController {
     private final StudentService studentService;
     private final StudentView studentView;
+    private List<Student> currentStudnets;
 
     public StudentController() {
         this.studentService = new StudentService();
@@ -23,35 +25,28 @@ public class StudentController {
     private void initializeEventListeners() {
         // Add Student
         studentView.getAddButton().addActionListener(e -> showAddDialog());
-
         // Edit Student
         studentView.getEditButton().addActionListener(e -> showEditDialog());
-
         // Delete Student
         studentView.getDeleteButton().addActionListener(e -> deleteStudent());
-
         // Search
         studentView.getSearchButton().addActionListener(e -> performSearch());
-
-        // Sort
-        studentView.getSortNameButton().addActionListener(e -> sortByName());
-        studentView.getSortYearButton().addActionListener(e -> sortByBirthYear());
-        studentView.getSortIdButton().addActionListener(e -> sortById());
-
         // File operations
         studentView.getImportButton().addActionListener(e -> importFromCSV());
         studentView.getExportButton().addActionListener(e -> exportToCSV());
-
         // Navigation
         studentView.getFirstButton().addActionListener(e -> navigateFirst());
         studentView.getPrevButton().addActionListener(e -> navigatePrevious());
         studentView.getNextButton().addActionListener(e -> navigateNext());
         studentView.getLastButton().addActionListener(e -> navigateLast());
-        studentView.getPrev2Button().addActionListener(e -> navigatePrevious2());
-        studentView.getNext2Button().addActionListener(e -> navigateNext2());
-
         // Refresh
         studentView.getRefreshButton().addActionListener(e -> updateTable());
+        // Clear search
+        studentView.getSearchField().addActionListener(e -> {
+            if (studentView.getSearchField().getText().trim().isEmpty()) {
+                updateTable();
+            }
+        });
     }
 
     private void showAddDialog() {
@@ -109,11 +104,14 @@ public class StudentController {
                         Integer.parseInt(birthYearField.getText().trim()),
                         majorField.getText().trim()
                 );
-
-                studentService.addStudent(student);
-                updateTable();
-                dialog.dispose();
-                JOptionPane.showMessageDialog(studentView.getFrame(), "Thêm sinh viên thành công!");
+                boolean success = studentService.addStudent(student);
+                if (success) {
+                    reloadTableAfterOperation();
+                    dialog.dispose();
+                    JOptionPane.showMessageDialog(studentView.getFrame(), "Thêm sinh viên thành công!");
+                } else {
+                    JOptionPane.showMessageDialog(studentView.getFrame(), "Lỗi khi thêm sinh viên!");
+                }
             }
         });
 
@@ -194,8 +192,12 @@ public class StudentController {
                         majorField.getText().trim()
                 );
 
-                if (studentService.updateStudent(id, updatedStudent)) {
-                    updateTable();
+                boolean success = studentService.updateStudent(id, updatedStudent);
+                if (success) {
+                    // Reload table và giữ lại selection
+                    int currentSelectedId = id;
+                    reloadTableAfterOperation();
+                    selectStudentById(currentSelectedId);
                     dialog.dispose();
                     JOptionPane.showMessageDialog(studentView.getFrame(), "Cập nhật sinh viên thành công!");
                 } else {
@@ -212,18 +214,18 @@ public class StudentController {
 
     private boolean validateStudentInput(String name, String address, String phone,
                                          String email, String birthYear, String major) {
-        if (name.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(studentView.getFrame(), "Tên không được để trống!");
+        if (name.trim().isEmpty() || !name.matches("^[a-zA-ZÀ-ỹ\\s]+$")) {
+            JOptionPane.showMessageDialog(studentView.getFrame(), "Tên không hợp lệ!");
             return false;
         }
 
-        if (address.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(studentView.getFrame(), "Địa chỉ không được để trống!");
+        if (address.trim().isEmpty() || !address.matches("^[\\p{L}0-9\\s,.-]{5,255}$")) {
+            JOptionPane.showMessageDialog(studentView.getFrame(), "Địa chỉ không hợp lệ!");
             return false;
         }
 
         if (phone.trim().isEmpty() || !phone.matches("\\d{10,11}")) {
-            JOptionPane.showMessageDialog(studentView.getFrame(), "Số điện thoại phải có 10-11 chữ số!");
+            JOptionPane.showMessageDialog(studentView.getFrame(), "Số điện thoại không hợp lệ");
             return false;
         }
 
@@ -232,8 +234,13 @@ public class StudentController {
             return false;
         }
 
+        if (birthYear.trim().isEmpty() || !birthYear.matches("^(19|20)\\d{2}$")) {
+            JOptionPane.showMessageDialog(studentView.getFrame(), "Năm sinh không hợp lệ!");
+            return false;
+        }
+
         try {
-            int year = Integer.parseInt(birthYear.trim());
+            int year = Integer.parseInt(birthYear);
             int currentYear = LocalDateTime.now().getYear();
             if (year < 1900 || year > currentYear) {
                 JOptionPane.showMessageDialog(studentView.getFrame(),
@@ -269,8 +276,12 @@ public class StudentController {
 
         if (confirm == JOptionPane.YES_OPTION) {
             int id = (Integer) studentView.getTableModel().getValueAt(selectedRow, 0);
-            if (studentService.deleteStudent(id)) {
-                updateTable();
+
+            boolean success = studentService.deleteStudent(id);
+            if (success) {
+                // Cập nhật bảng và điều chỉnh selection
+                adjustSelectionAfterDelete(selectedRow);
+                reloadTableAfterOperation();
                 JOptionPane.showMessageDialog(studentView.getFrame(), "Xóa sinh viên thành công!");
             } else {
                 JOptionPane.showMessageDialog(studentView.getFrame(), "Lỗi khi xóa sinh viên!");
@@ -312,21 +323,6 @@ public class StudentController {
         if (results != null) {
             studentView.updateTable(results);
         }
-    }
-
-    private void sortByName() {
-        List<Student> sorted = studentService.sortByName();
-        studentView.updateTable(sorted);
-    }
-
-    private void sortByBirthYear() {
-        List<Student> sorted = studentService.sortByBirthYear();
-        studentView.updateTable(sorted);
-    }
-
-    private void sortById() {
-        List<Student> sorted = studentService.sortById();
-        studentView.updateTable(sorted);
     }
 
     private void exportToCSV() {
@@ -401,11 +397,57 @@ public class StudentController {
     }
 
     private void updateTable() {
-        List<Student> students = studentService.getAllStudents();
-        studentView.updateTable(students);
+//        List<Student> students = studentService.getAllStudents();
+//        studentView.updateTable(students);
+        try {
+            currentStudnets = studentService.getAllStudents();
+            studentView.updateTable(currentStudnets);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(studentView.getFrame(), "Lỗi khi cập nhật bảng: " + e.getMessage());
+        }
     }
+
+
+    private void reloadTableAfterOperation() {
+        String searchText = studentView.getSearchField().getText().trim();
+        if (searchText.isEmpty()) {
+            // Nếu không có search, load toàn bộ
+            updateTable();
+        } else {
+            // Nếu đang search, thực hiện lại search để cập nhật kết quả
+            performSearch();
+        }
+    }
+
+
+    // Chọn sinh viên theo ID sau khi cập nhật
+    private void selectStudentById(int id) {
+        for (int i = 0; i < studentView.getTable().getRowCount(); i++) {
+            int modelRow = studentView.getTable().convertRowIndexToModel(i);
+            int rowId = (Integer) studentView.getTableModel().getValueAt(modelRow, 0);
+            if (rowId == id) {
+                studentView.getTable().setRowSelectionInterval(i, i);
+                studentView.getTable().scrollRectToVisible(studentView.getTable().getCellRect(i, 0, true));
+                break;
+            }
+        }
+    }
+
+    // Điều chỉnh selection sau khi xóa
+    private void adjustSelectionAfterDelete(int deletedRow) {
+        int rowCount = studentView.getTable().getRowCount();
+        if (rowCount > 0) {
+            int newSelectedRow = Math.min(deletedRow, rowCount - 1);
+            studentView.getTable().setRowSelectionInterval(newSelectedRow, newSelectedRow);
+            studentView.getTable().scrollRectToVisible(
+                    studentView.getTable().getCellRect(newSelectedRow, 0, true));
+        }
+    }
+
 
     public void showView() {
         studentView.setVisible(true);
     }
+
+
 }

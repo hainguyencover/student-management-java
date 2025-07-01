@@ -14,14 +14,34 @@ public class StudentService {
     private final String CSV_FILE = "data/students.csv";
 
     public StudentService() {
-        this.students = new ArrayList<>();
+        createDataDirectory();
         loadFromFile();
     }
 
+    private void createDataDirectory() {
+        File dataDir = new File("data");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
+    }
+
     // CRUD Operations
-    public void addStudent(Student student) {
-        students.add(student);
-        saveToFile();
+    public boolean addStudent(Student student) {
+        try {
+            // Kiểm tra trùng lặp ID (nếu cần)
+            if (findStudentById(student.getId()) != null) {
+                System.err.println("Sinh viên có ID " + student.getId() + " đã tồn tại.");
+                return false;
+            }
+            // Thêm sinh viên vào danh sách
+            students.add(student);
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("Bị lỗi sau khi thêm: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean updateStudent(int id, Student updatedStudent) {
@@ -83,24 +103,6 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
-    // Sort Operations
-    public List<Student> sortByName() {
-        return students.stream()
-                .sorted(Comparator.comparing(Student::getName, String.CASE_INSENSITIVE_ORDER))
-                .collect(Collectors.toList());
-    }
-
-    public List<Student> sortByBirthYear() {
-        return students.stream()
-                .sorted(Comparator.comparing(Student::getBirthYear))
-                .collect(Collectors.toList());
-    }
-
-    public List<Student> sortById() {
-        return students.stream()
-                .sorted(Comparator.comparing(Student::getId))
-                .collect(Collectors.toList());
-    }
 
     // File Operations
     public void saveToFile() {
@@ -130,9 +132,9 @@ public class StudentService {
 
     public void exportToCSV() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE))) {
-            writer.println("ID,Name,Address,Phone,Email,Gender,BirthYear,Major");
+            writer.println("ID, Họ tên, Địa chỉ, Số điện thoại, Email, Giới tính, Năm sinh, Chuyên ngành");
             for (Student student : students) {
-                writer.printf("%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%d,\"%s\"%n",
+                writer.printf(" %d,\" %s\",\" %s\",\" %s\",\" %s\",\" %s\" ,%d,\" %s\" %n",
                         student.getId(), student.getName(), student.getAddress(),
                         student.getPhone(), student.getEmail(), student.getGender(),
                         student.getBirthYear(), student.getMajor());
@@ -141,6 +143,12 @@ public class StudentService {
         } catch (IOException e) {
             System.err.println("Lỗi khi xuất file CSV: " + e.getMessage());
         }
+    }
+
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        // Escape dấu ngoặc kép bằng cách double nó
+        return value.replace("\"", "\"\"").trim();
     }
 
     public void importFromCSV() {
